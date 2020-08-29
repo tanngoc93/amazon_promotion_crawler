@@ -10,7 +10,7 @@
 yarn install
 ```
 
-### Checking & remove expired
+### Checking & Remove expired coupons
 
 ```bash
 node index.amazon.checker.js
@@ -19,11 +19,11 @@ node index.amazon.checker.js
 ### Crawler
 
 ```bash
-ADMIN_USER=$ADMIN_USER ADMIN_PASS=$ADMIN_PASS NUM_OF_SCROLL=1 CATEGORY=(pet-supplies/kitchen/etc) OS=(macos/linux) node index.amazon.js
+ADMIN_USER=(ADMIN_USER) ADMIN_PASS=(ADMIN_PASS) CATEGORY=(pet-supplies/kitchen/etc) OS=(macos/linux) node index.amazon.js
 ```
 
 ### Insert
 
 ```bash
-ADMIN_USER=$ADMIN_USER ADMIN_PASS=$ADMIN_PASS OS=(macos/linux) node index.amazon.inserter.js
+ADMIN_USER=(ADMIN_USER) ADMIN_PASS=(ADMIN_PASS) OS=(macos/linux) node index.amazon.inserter.js
 ```
