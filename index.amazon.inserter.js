@@ -179,6 +179,8 @@ try {
         // ******* ******* ******* // ******* ******* ******* //
         await page.waitForSelector('input#coupon_discount_rate');
         // ******* ******* ******* // ******* ******* ******* //
+        await page.waitFor(time);
+        // ******* ******* ******* // ******* ******* ******* //
         await page.type('input#coupon_discount_rate', rate);
         // ******* ******* ******* // ******* ******* ******* //
       } catch (err) {
