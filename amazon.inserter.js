@@ -4,55 +4,39 @@ const puppeteer = require('puppeteer');
 
 events.EventEmitter.defaultMaxListeners = 0;
 
-let coupons = [];
+let promotions = [];
 
 try {
-  coupons = JSON.parse(
-    fs.readFileSync('./coupon_dbFull.json')
+  promotions = JSON.parse(
+    fs.readFileSync('./promotions.json')
   );
 } catch (err) {
-  console.log('Error...', err.message);
+  console.log('File not found.');
 }
 
 (async () => {
 
   const time = 1000;
 
-  let executablePath = null;
-
-  if (process.env.OS == 'linux') {
-    executablePath = '/usr/bin/google-chrome';
-  } else if (process.env.OS == 'macos') {
-    executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-  }
-
   const browserSetting = {
     defaultViewport: null,
     headless: process.env.HEADLESS == 'true' ? true : false,
-    args: [
-      '--start-maximized'
-    ],
-    executablePath
+    args: [ '--start-maximized' ]
   };
 
   const browser = await puppeteer.launch(browserSetting);
   const page = await browser.newPage();
 
-  // ================================================== //
-  // ================================================== //
-
-  await page.goto(
-    process.env.DOMAIN || 'https://coupon.thedogpaws.com/admin/login'
-  );
+  await page.goto( process.env.LOGIN_PAGE );
 
   await page.waitForSelector('input#admin_user_email')
             .then(async () => {
-              await page.type('input#admin_user_email', process.env.ADMIN_USER);
+              await page.type('input#admin_user_email', process.env.USER);
             });
 
   await page.waitForSelector('input#admin_user_password')
             .then(async () => {
-              await page.type('input#admin_user_password', process.env.ADMIN_PASS);
+              await page.type('input#admin_user_password', process.env.PASSWORD);
             });
 
   await page.waitForSelector('li#admin_user_submit_action')
@@ -60,16 +44,16 @@ try {
               await page.click('li#admin_user_submit_action input[type="submit"]');
             });
 
-  for (let i = 0; i < coupons.length; i++) {
+  for (let i = 0; i < promotions.length; i++) {
 
-    let coupon = coupons[i];
+    let coupon = promotions[i];
 
     if (coupon.image === null || coupon.image === '') {
       console.log('Nothing...')
     } else {
 
       await page.goto(
-        process.env.DOMAIN || 'https://coupon.thedogpaws.com/admin/coupons/new'
+        process.env.CREATE_PROMOTION_PAGE
       );
 
       await page.waitFor(time*1.5);
@@ -104,19 +88,10 @@ try {
       await page.waitForSelector('input#coupon_name');
       await page.type('input#coupon_name', coupon.title.replace('\n', ''));
 
-      // ******* ******* ******* ******* ******* ******* //
       const code = coupon.title.match(/(?<=code\s+).*?(?=\s+through)/gs)[0];
-      // ******* ******* ******* ******* ******* ******* //
 
-      try {          
-        // ******* ******* ******* ******* ******* ******* //
-        await page.waitForSelector('input#coupon_code');
-        // ******* ******* ******* ******* ******* ******* //
-        await page.type('input#coupon_code', code.replace(',', ''));
-        // ******* ******* ******* ******* ******* ******* //
-      } catch (err) {
-        console.log('Error...', err.message);
-      }
+      await page.waitForSelector('input#coupon_code');
+      await page.type('input#coupon_code', code.replace(',', ''));
 
       await page.waitForSelector('input#coupon_short_link');
       await page.type('input#coupon_short_link', coupon.short);
@@ -124,17 +99,9 @@ try {
       await page.waitForSelector('input#coupon_link');
       await page.type('input#coupon_link', coupon.link);
 
-      try {
-        // ******* ******* ******* // ******* ******* ******* //
-        const tags = `${coupon.promoCategory}, ${coupon.title.match(/(?<=from\s+).*?(?=\s+with promo)/gs)[0]}, ${code.replace(',', '')}`
-        // ******* ******* ******* // ******* ******* ******* //
-        await page.waitForSelector('input#coupon_tag_list');
-        // ******* ******* ******* // ******* ******* ******* //
-        await page.type('input#coupon_tag_list', tags);
-        // ******* ******* ******* // ******* ******* ******* //
-      } catch (err) {
-        console.log('Error...', err.message);
-      }
+      const tags = `${coupon.promoCategory}, ${coupon.title.match(/(?<=from\s+).*?(?=\s+with promo)/gs)[0]}, ${code.replace(',', '')}`
+      await page.waitForSelector('input#coupon_tag_list');
+      await page.type('input#coupon_tag_list', tags);
 
       await page.waitForSelector('input#coupon_starts_at');
       await page.type('input#coupon_starts_at', coupon.startTime);
@@ -142,20 +109,20 @@ try {
       await page.waitForSelector('input#coupon_expires_at');
       await page.type('input#coupon_expires_at', coupon.endTime);
 
-      if (coupon.image !== null && coupon.image !== '') {
+      if ( coupon.image !== null && coupon.image !== '' ) {
+
         await page.waitForSelector('input#coupon_site_stripe');
         await page.click('input#coupon_site_stripe');
 
         await page.waitForSelector('textarea#coupon_site_stripe_content');
         await page.type('textarea#coupon_site_stripe_content', coupon.image);
+
       }
 
       await page.waitForSelector('textarea#coupon_description');
       await page.type('textarea#coupon_description', coupon.title);
 
-      // ******* ******* ******* // ******* ******* ******* //
       const rate = coupon.title.match(/(?<=Save\s+).*?(?=\s+on select)/gs)[0];
-      // ******* ******* ******* // ******* ******* ******* //
 
       try {
         // ******* ******* ******* // ******* ******* ******* //
@@ -195,7 +162,7 @@ try {
       await page.click('li#coupon_submit_action > input[type=submit]');
       await page.waitFor(time*1.5);
 
-      console.log(`Created...${i+1}`);
+      console.log(`Created...${ i + 1 }`);
     }
   }
 
